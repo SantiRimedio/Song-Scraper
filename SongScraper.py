@@ -26,8 +26,9 @@ class songScraper:
         Retrieves songs for a specific genre.
 
         :param genre: music genre to search. Default "Rock Nacional".
+        :param artist_n: number of artists to return. Default 5.
+        :param song_n: number of songs to return for each artist. Default 5.
         :param popularity: lower threshold of popularity for artists. Default 15.
-        :param size: number of artists to return. Default 5.
         :param market: market for the artists. Default "AR".
 
         :return: DataFrame containing column witt audio features.
