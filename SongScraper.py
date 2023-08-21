@@ -21,11 +21,107 @@ class songScraper:
         self.spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials(client_id=cid, client_secret=secret))
         self.genius = lyricsgenius.Genius(genius_api_key)
 
+    def get_artists(self, genre="Rock Nacional", artist_n=5, song_n=5, market="AR",artist_popularity=15):
+        """
+        Retrieves songs for a specific genre.
+
+        :param genre: music genre to search. Default "Rock Nacional".
+        :param popularity: lower threshold of popularity for artists. Default 15.
+        :param size: number of artists to return. Default 5.
+        :param market: market for the artists. Default "AR".
+
+        :return: DataFrame containing column witt audio features.
+        """
+        offset=1
+        size = artist_n
+        # Request de search endpoint query=genre, tipo playlist.
+        response = self.spotify.search(q=genre, type='playlist', market=market, limit=None, offset=offset)
+
+        #Extraigo el id de las playlists que devuelve response
+        playlists = [playlist['id'] for playlist in response['playlists']['items']]
+
+        #Creo una lista vacia que se convertirá en el df final y un set de artistas para comprobar repeticiones
+        artists_data = []
+        seen_artist_ids = set()
+
+        # While loop para obtener la cantidad de artistas especificada en size
+
+        while size is None or len(artists_data) < size:
+            #itero sobre cada playlist ID
+            for playlist_id in playlists:
+                results = self.spotify.playlist_tracks(playlist_id)
+                tracks = results['items']
+
+                # Itero sobre todos los tracks de la playlist
+                for track in tracks:
+                    track_info = track['track']
+
+                    # Itero sobre los artistas de cada track
+                    for artist in track_info['artists']:
+                        artist_id = artist['id']
+
+                        # Compruebo repeticiones
+                        if artist_id not in seen_artist_ids:
+                            seen_artist_ids.add(artist_id)
+
+
+                            # Intento obtener más información del artista
+                            try:
+                                artist_data = self.spotify.artist(artist_id)
+                            except:
+                                artist_data = None
+
+                            # Compruebo si el artista produce rock nacional
+                            if artist_data is not None and ("argentine rock" in artist_data["genres"] or "rock nacional" in artist_data["genres"]):
+
+                                #Filtro los artistas por un umbral de popularidad
+                                if artist_data['popularity'] > artist_popularity:
+
+                                    # Extraigo el nombre, id, genre y popularidad del artista.
+                                    artist_info = {
+                                        'Artist': artist['name'],
+                                        'Artist_ID': artist_id,
+                                        "Artist_genres": artist_data['genres'],
+                                        "Artist_popularity": artist_data['popularity']
+                                    }
+                                    artists_data.append(artist_info)
+
+                        if size is not None and len(artists_data) >= size:
+                            break
+
+                    if size is not None and len(artists_data) >= size:
+                        break
+
+                if size is not None and len(artists_data) >= size:
+                    break
+
+        df = pd.DataFrame(artists_data)
+        songs = []
+        song_id = []
+        songs_release = []
+        songs_popularity = []
+        for i in df["Artist"]:
+            #Obtengo n tracks para artista
+            results = self.spotify.search(q=f"artist:{i}",  type='track', offset=0, limit=song_n)
+
+            #Extraigo canción, id de canción, release y popularidad.
+            songs.append([result["name"] for result in results["tracks"]["items"]])
+            song_id.append([result["id"] for result in results["tracks"]["items"]])
+            songs_release.append([result["album"]["release_date"] for result in results["tracks"]["items"]])
+            songs_popularity.append([result["popularity"] for result in results["tracks"]["items"]])
+        df["Track"] = songs
+        df["Track_ID"] = song_id
+        df["Track_release_date"] = songs_release
+        df["Track_popularity"] = songs_popularity
+        df = df.explode(["Track","Track_ID","Track_release_date","Track_popularity"])
+
+        return df
+
     def get_songs(self, n=50, genre="", market="AR"):
         """
        Fetches song data, including track information, artist details, and audio features.
 
-       :param n: Number of songs to fetch.
+       :param n: Number of songs to fetch. Limit: 1000. See get_artists method for a bigger number of songs.
        :param genre: Music genre to fetch.
        :param market: Market on which to fetch songs. Defaults to AR.
        :return: DataFrame containing song data.
