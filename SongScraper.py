@@ -170,9 +170,12 @@ class songScraper:
     # Extraigo los audio features para cada canción
         features = []
         for i in df["Track_ID"]:
-            feature = self.spotify.audio_features(i)
             try:
-                feature = {k: feature[0][k] for k in list(feature[0])[:11]}
+                feature = self.spotify.audio_features(i)
+                if feature:
+                    feature = {k: feature[0][k] for k in list(feature[0])[:11]}
+                else:
+                    feature = "nan"
             except:
                 feature = "nan"
             features.append(feature)
