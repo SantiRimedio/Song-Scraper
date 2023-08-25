@@ -73,19 +73,19 @@ class songScraper:
                                 artist_data = None
 
                             # Compruebo si el artista produce rock nacional
-                            if artist_data is not None and ("argentine rock" in artist_data["genres"] or "rock nacional" in artist_data["genres"]):
+                            #if artist_data is not None and ("argentine rock" in artist_data["genres"] or "rock nacional" in artist_data["genres"]):
 
-                                #Filtro los artistas por un umbral de popularidad
-                                if artist_data['popularity'] > artist_popularity:
+                            #Filtro los artistas por un umbral de popularidad
+                            if artist_data['popularity'] > artist_popularity:
 
-                                    # Extraigo el nombre, id, genre y popularidad del artista.
-                                    artist_info = {
-                                        'Artist': artist['name'],
-                                        'Artist_ID': artist_id,
-                                        "Artist_genres": artist_data['genres'],
-                                        "Artist_popularity": artist_data['popularity']
-                                    }
-                                    artists_data.append(artist_info)
+                                # Extraigo el nombre, id, genre y popularidad del artista.
+                                artist_info = {
+                                    'Artist': artist['name'],
+                                    'Artist_ID': artist_id,
+                                    "Artist_genres": artist_data['genres'],
+                                    "Artist_popularity": artist_data['popularity']
+                                }
+                                artists_data.append(artist_info)
 
                         if size is not None and len(artists_data) >= size:
                             break
